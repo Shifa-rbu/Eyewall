@@ -1,0 +1,67 @@
+﻿<!doctype html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eyewall — Kendrapara-Paradip Delta Console</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="style.css">
+</head><body>
+<header>
+  <h1>EYEWALL</h1>
+  <span>Anticipatory-action console • Kendrapara–Paradip delta, Odisha</span>
+  <span class="badge">Powered by Gemini 3.7 Flash</span>
+  <span class="badge">Scenario: T-36 h to landfall</span>
+  <select id="district" title="cross-border rollout (Rule 4)">
+    <option selected>Kendrapara–Paradip, India</option>
+    <option disabled>Cox's Bazar, Bangladesh — coming soon</option>
+    <option disabled>Rakhine coast, Myanmar — coming soon</option>
+  </select>
+</header>
+<main>
+  <div id="map"></div>
+  <aside>
+    <section><h2>Scenario storm surge</h2>
+      <input type="range" id="surge" min="0" max="60" value="30">
+      <b id="surgeVal">3.0 m</b>
+      <label><input type="checkbox" id="stress" checked> rain waterlogging corridors</label>
+      <div id="rain">rain feed loading…</div>
+      <div id="trigger">Parametric trigger: STANDBY.</div>
+    </section>
+    <section><h2>Computed exposure (live)</h2>
+      <p><b id="statArea">–</b> km² land inundated</p>
+      <p>medical <b id="statMed">–</b> • shelter-capacity <b id="statShel">–</b> • power-grid <b id="statPow">–</b></p>
+      <p>road in-flood <b id="statRoad">–</b> km • line in-flood <b id="statGrid">–</b> km</p>
+      <p>power-dependency flags <b id="statFlag">–</b> (screening heuristic)</p>
+      <div id="airisk">AI risk read: –</div>
+      <ul id="facList"></ul>
+      <p class="tiny">Power-grid assets: substations/plants + transmission lines (OSM power=*).
+      Shelter capacity: tagged shelter-capacity proxies where present; schools &amp; community halls per Odisha practice.</p>
+    </section>
+    <section><h2>Data provenance</h2>
+      <p class="tiny">Elevation: NASA SRTM 30 m (USGS, AWS open data) · Assets: © OpenStreetMap
+      contributors (Sep 2026 extract) · Tracks: NOAA IBTrACS v04r01 · Rain: Open-Meteo, retrieved
+      <span id="rainTime">–</span> · SAR: Sentinel-1 (Copernicus/ESA) via GEE, Apr/May 2019,
+      retrospective. Design informed by Mühlhofer et al. 2024 (One Earth), Khatun et al. 2022,
+      IMD Cyclone SOP Jul 2024.<br><b>Screening-level decision support — NOT an official forecast
+      or evacuation directive. Official warnings: IMD / OSDMA.</b></p>
+    </section>
+    <section><h2>Historical track replay</h2>
+      <select id="storm"></select>
+      <div id="trackInfo"></div>
+    </section>
+    <section><h2>Advisory & broadcast</h2>
+      <div id="aimode">Google AI: –</div>
+      <select id="lang"><option value="en">English</option><option value="hi">हिन्दी</option><option value="or">ଓଡ଼ିଆ (Gemini / EN fallback)</option></select>
+      <input id="gemkey" type="password" placeholder="optional Gemini API key (free, AI Studio)">
+      <textarea id="advisory" rows="6" readonly></textarea>
+      <button onclick="composeAdvisory()">Regenerate</button>
+      <button onclick="capCopy()">Copy CAP-inspired JSON</button>
+      <button onclick="speak()">🔊 Read aloud</button>
+      <button onclick="dispatch()">Queue alert</button>
+      <ul id="log"></ul>
+    </section>
+  </aside>
+</main>
+<script src="app.js"></script>
+</body></html>

@@ -1,0 +1,31 @@
+﻿* { box-sizing: border-box; margin: 0; }
+body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; }
+header { display: flex; gap: 14px; align-items: baseline; padding: 10px 16px;
+         background: #1e293b; border-bottom: 2px solid #2563eb; flex-wrap: wrap; }
+header h1 { color: #60a5fa; letter-spacing: 2px; font-size: 20px; }
+header span { color: #94a3b8; font-size: 12px; }
+main { display: flex; height: calc(100vh - 52px); }
+#map { flex: 1; }
+aside { width: 360px; overflow-y: auto; background: #1e293b; padding: 12px; }
+section { background: #0f172a; border: 1px solid #334155; border-radius: 8px;
+          padding: 10px; margin-bottom: 12px; }
+h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #60a5fa; margin-bottom: 8px; }
+input[type=range] { width: 70%; }
+#surgeVal { color: #fbbf24; margin-left: 8px; }
+#facList { margin: 6px 0 0 16px; font-size: 13px; color: #fca5a5; }
+#trackInfo { font-size: 13px; color: #a5b4fc; margin-top: 6px; }
+#rain { font-size: 12px; color: #86efac; margin-top: 6px; }
+textarea, input, select { width: 100%; margin: 4px 0; background: #1e293b;
+          color: #e2e8f0; border: 1px solid #334155; border-radius: 6px; padding: 6px; }
+button { background: #2563eb; border: 0; color: white; padding: 7px 10px;
+         border-radius: 6px; margin: 3px 4px 0 0; cursor: pointer; }
+#log { margin-top: 8px; font-size: 12px; color: #86efac; list-style: none; }
+.badge { background: #2563eb; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+header select { width: auto; margin-left: auto; background: #0f172a; color: #e2e8f0;
+  border: 1px solid #334155; border-radius: 6px; padding: 4px; }
+#trigger { margin-top: 8px; padding: 6px; border-radius: 6px; background: #1e293b;
+  color: #94a3b8; font-size: 12px; }
+#trigger.on { background: #7f1d1d; color: #fecaca; }
+#airisk { font-size: 12px; color: #a5b4fc; margin: 6px 0; }
+#aimode { font-size: 11px; color: #86efac; margin-bottom: 4px; }
+.tiny { font-size: 10px; color: #64748b; margin-top: 6px; }
