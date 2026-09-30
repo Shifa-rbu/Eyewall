@@ -363,7 +363,10 @@ def draft_advisory(exposure: dict, surge: float, lang: str = "en") -> dict:
         )
         text = _text_of(payload)
     except Exception as exc:  # noqa: BLE001
-        return {**fallback, "note": f"Gemini call failed: {type(exc).__name__}"}
+        return {
+            **fallback,
+            "note": f"Gemini unavailable ({type(exc).__name__}); using template fallback",
+        }
 
     if not text:
         return {**fallback, "note": "Gemini returned an empty or blocked response"}
