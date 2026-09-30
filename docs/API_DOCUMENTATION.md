@@ -100,4 +100,4 @@ At every stage of execution, failures degrade gracefully to the deterministic te
 - **Gemini Generation**: Displayed in UI as `Gemini (<model_name>)` only when `mode == "gemini"`.
 - **Template Fallback**: Displayed as `Template` whenever `mode == "template"`. The word `Gemini` is never displayed for template fallbacks.
 - **Guardrail Rejection**: When `guardrail.ok == false`, the rejected draft is suppressed, the UI falls back to the template, and a clear safety notice is displayed in `#ai-error`.
-- **Live Model ID Validation**: Note that model strings in the discovery chain require live key verification via `python3 scripts/verify_google.py` with a valid `GEMINI_API_KEY` before claiming live Google API compatibility.
+- **Live Model Verification**: Verified model string `gemini-3.7-flash` via `python3 scripts/verify_google.py` on 30 September 2026. When the API key, quota, or network is unavailable, the integration seamlessly degrades to a deterministic template.

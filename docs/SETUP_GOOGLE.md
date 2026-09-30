@@ -36,4 +36,8 @@ export GEMINI_API_KEY="your-actual-gemini-api-key"
 python3 scripts/verify_google.py
 ```
 
-Note: Live model discovery must be validated with a real key before claiming live API integration.
+### Verification Status
+- **Verified Model**: `gemini-3.7-flash`
+- **Verification Date**: 30 September 2026
+- **Fallback Behavior**: When the API key, daily quota, or network connection is unavailable, the integration seamlessly degrades to a deterministic template.
+
