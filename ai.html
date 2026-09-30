@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Eyewall — AI review panel</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 24px; background: #0f172a; color: #e2e8f0;
+      font: 15px/1.55 system-ui, sans-serif; }
+    main { max-width: 900px; margin: 0 auto; }
+    header { margin-bottom: 20px; padding: 18px 20px; background: #1e293b;
+      border: 1px solid #334155; border-left: 4px solid #2563eb; border-radius: 8px; }
+    h1 { margin: 0 0 4px; color: #60a5fa; font-size: 22px; letter-spacing: 1px; }
+    header p, .quiet { margin: 0; color: #94a3b8; }
+    .panel { margin: 12px 0; padding: 16px; background: #1e293b;
+      border: 1px solid #334155; border-radius: 8px; }
+    h2 { margin: 0 0 8px; color: #60a5fa; font-size: 13px;
+      letter-spacing: .08em; text-transform: uppercase; }
+    output, .output { display: block; min-height: 24px; white-space: pre-wrap;
+      overflow-wrap: anywhere; }
+    #ai-status { color: #fbbf24; }
+    #ai-quota { color: #cbd5e1; }
+    #ai-aimode { display: inline-block; padding: 2px 9px; border-radius: 999px;
+      background: #334155; color: #bfdbfe; font-size: 12px; }
+    #ai-advisory { min-height: 88px; color: #bbf7d0; }
+    #ai-risk { color: #c4b5fd; }
+    #ai-error { color: #fecaca; background: #451a1a; border-left: 3px solid #ef4444;
+      padding: 8px 10px; }
+    #ai-error:empty { display: none; }
+    .note { margin-top: 14px; padding: 12px; border-radius: 6px;
+      background: #172554; color: #bfdbfe; font-size: 13px; }
+    a { color: #93c5fd; }
+    a:focus-visible { outline: 3px solid #fbbf24; outline-offset: 3px; }
+    @media (max-width: 600px) { body { padding: 14px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>EYEWALL · AI REVIEW</h1>
+      <p>Draft support for district review. This panel does not issue warnings or dispatch messages.</p>
+    </header>
+
+    <section class="panel" aria-label="Capability">
+      <h2>Capability</h2>
+      <output id="ai-status" aria-live="polite">Loading service capability…</output>
+      <p id="ai-quota" class="quiet" aria-live="polite">Checking remaining calls today…</p>
+    </section>
+
+    <section class="panel" aria-label="Advisory draft">
+      <h2>Advisory draft</h2>
+      <p><span class="quiet">Draft mode: </span><span id="ai-aimode">No draft yet</span></p>
+      <div id="ai-advisory" class="output" aria-live="polite"></div>
+    </section>
+
+    <section class="panel" aria-label="Structured risk read">
+      <h2>Structured risk read</h2>
+      <div id="ai-risk" class="output" aria-live="polite"></div>
+    </section>
+
+    <p id="ai-error" role="status" aria-live="polite"></p>
+    <p class="note">Model output is a draft for human review. Verify conditions and official instructions with IMD, OSDMA, and local authorities. Screening results are not a hydrodynamic forecast.</p>
+  </main>
+</body>
+</html>
