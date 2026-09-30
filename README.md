@@ -10,9 +10,9 @@ Eyewall is a local prototype for human-reviewed cyclone-coast preparation in the
 |---|---|
 | Elevation, mapped assets, historical cyclone tracks | Processed local SRTM, OpenStreetMap and NOAA IBTrACS files |
 | Flood layer and asset exposure | Sea-connected bathtub screening scenario; not a hydrodynamic model |
-| Browser exposure and server exposure API | Implemented independently; fixture parity is a work in progress |
+| Browser exposure and server exposure API | Both compute screening exposure from the shared grid, elevation, and assets; server reference cases are covered, with no cross-runtime parity test |
 | Forecast context | Open-Meteo public forecast feed; unavailable offline and not observations |
-| Gemini drafting | Unavailable; local template drafts only |
+| Gemini drafting | Implemented server-side with a number guardrail and template fallback; unavailable when no usable key is configured |
 | Earth Engine / Sentinel-1 retrieval | Unavailable; gee_service has no operational integration |
 | Human review and audit | Local SQLite queue; hash-chained audit export; no message dispatch |
 
