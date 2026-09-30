@@ -12,7 +12,7 @@ Eyewall is a local prototype for human-reviewed cyclone-coast preparation in the
 | Flood layer and asset exposure | Sea-connected bathtub screening scenario; not a hydrodynamic model |
 | Browser exposure and server exposure API | Both compute screening exposure from the shared grid, elevation, and assets; server reference cases are covered, with no cross-runtime parity test |
 | Forecast context | Open-Meteo public forecast feed; unavailable offline and not observations |
-| Gemini drafting | Implemented server-side with a number guardrail and template fallback; unavailable when no usable key is configured |
+| Gemini drafting | Implemented server-side with number guardrail and template fallback; verified model `gemini-3.7-flash` (30 September 2026); degrades to template when key, quota, or network is unavailable |
 | Earth Engine / Sentinel-1 retrieval | Unavailable; gee_service has no operational integration |
 | Human review and audit | Local SQLite queue; hash-chained audit export; no message dispatch |
 
@@ -44,23 +44,23 @@ Open http://127.0.0.1:8000. The static page needs an internet connection for Lea
            ▼
     FastAPI ── screening exposure endpoint
            ├── template advisory + SQLite review/audit
-           └── Google integrations: unavailable in this revision
+           └── Google integrations: Gemini server-side adapter
 
 The browser has no Gemini key field or direct Gemini request. FastAPI serves static/ and the read-only processed data/ directory. The review decision path writes only local SQLite records.
 
 ### API reference
 
-- GET /api/health — feature availability; Google services report unavailable.
+- GET /api/health — feature availability and Gemini model discovery state.
 - GET /api/exposure?surge=3 — server-side screening calculation for surge in 0–8 m.
 - GET /api/weather — same-origin Open-Meteo forecast proxy; returns an unavailable status offline.
-- POST /api/advisory/draft — template-only SSE draft; limited to 10 requests/minute per IP.
+- POST /api/advisory/draft — template-only or Gemini SSE draft; limited to 10 requests/minute per IP.
 - GET /api/review/queue, POST /api/review/{draftId}/decision — local human-review queue.
 - GET /api/audit/export — audit entries and hash-chain verification.
 - GET /api/sar/evidence, POST /api/sar/refresh — empty evidence response; refresh returns 409 until GEE is implemented.
 
 ## Google services
 
-No Google product integration is active in this revision. Gemini and Earth Engine must not be described as live. Credential setup notes in docs/SETUP_GOOGLE.md explain the intended server-side boundary and the current implementation gap.
+Server-side Gemini drafting and structured risk read are implemented using model discovery (verified model `gemini-3.7-flash`, verified on 30 September 2026), a strict number guardrail, and a persisted daily quota ledger. When the API key, daily budget, or network connection is unavailable, the application degrades to a deterministic template fallback. Earth Engine / Sentinel-1 retrieval is unconfigured (`/api/sar/refresh` returns 409 by design). See `docs/SETUP_GOOGLE.md`.
 
 ## Limitations and data sources
 
