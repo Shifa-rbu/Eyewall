@@ -12,7 +12,7 @@ fail() {
 
 ensure_gitignore() {
   local ignore_file="${ROOT}/.gitignore"
-  if ! grep -Fxq '.hf-space-build/' "$ignore_file"; then
+  if ! tr -d '\r' < "$ignore_file" | grep -Fxq '.hf-space-build/'; then
     {
       printf '\n# Hugging Face Space payload assembled by deploy/hf-space/push.sh\n'
       printf '.hf-space-build/\n'
