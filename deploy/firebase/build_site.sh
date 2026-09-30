@@ -34,6 +34,9 @@ done
 # Map data: required by app.js at boot.
 cp -r "${ROOT}/data" "${PUBLIC}/data"
 
+# Runtime API base. Empty keeps the API same-origin by default.
+printf 'window.EYEWALL_API_BASE = "%s";\n' "${EYEWALL_API_BASE:-}" > "${PUBLIC}/config.js"
+
 echo "public/ assembled:"
 ls -la "${PUBLIC}"
 du -sh "${PUBLIC}"

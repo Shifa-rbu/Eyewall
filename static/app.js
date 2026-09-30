@@ -1,5 +1,6 @@
 // ---------- config (your choices — the only "hardcoded" things) ----------
 const TRIG = 3.0;                       // parametric trigger threshold (m)
+const API_BASE = (window.EYEWALL_API_BASE || "");
 
 // ---------- helpers ----------
 const $ = (id) => document.getElementById(id);
@@ -51,7 +52,7 @@ async function boot() {
 async function loadCapabilities() {
   const chip = $("capabilities");
   try {
-    const response = await fetch("/api/health");
+    const response = await fetch(API_BASE + "/api/health");
     if (!response.ok) throw new Error("API unavailable");
     const health = await response.json();
     const gemini = health.gemini || {};
@@ -236,7 +237,7 @@ function drawStress(rainMax) {
 // ---------- live rain (Open-Meteo, free, no key) ----------
 async function fetchRain() {
   try {
-    const response = await fetch("/api/weather");
+    const response = await fetch(API_BASE + "/api/weather");
     if (!response.ok) throw new Error("weather endpoint unavailable");
     const r = await response.json();
     const max = Math.max(...r.hourly.precipitation.slice(0, 24));
@@ -318,7 +319,7 @@ async function composeAdvisory() {
   $("advisory").value = advisoryText();
   $("aimode").textContent = "Requesting a draft\u2026";
   try {
-    const response = await fetch("/api/advisory/draft", {
+    const response = await fetch(API_BASE + "/api/advisory/draft", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ surge: lastStats.surge, lang: $("lang").value, exposure: lastStats })
     });
@@ -337,7 +338,7 @@ async function composeAdvisory() {
 }
 
 async function loadReviewQueue() {
-  const response = await fetch("/api/review/queue");
+  const response = await fetch(API_BASE + "/api/review/queue");
   if (!response.ok) throw new Error("Review queue unavailable");
   const queue = await response.json();
   const list = $("reviewQueue");
@@ -355,7 +356,7 @@ async function loadReviewQueue() {
       button.type = "button";
       button.textContent = decision === "edit" ? "Save edit and approve" : decision[0].toUpperCase() + decision.slice(1);
       button.addEventListener("click", async () => {
-        const response = await fetch("/api/review/" + encodeURIComponent(draft.id) + "/decision", {
+        const response = await fetch(API_BASE + "/api/review/" + encodeURIComponent(draft.id) + "/decision", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ decision, reviewer: "local reviewer",
             edited_text: decision === "edit" ? edit.value : null })
@@ -369,7 +370,7 @@ async function loadReviewQueue() {
     list.append(item);
   }
   if (!queue.pending.length) list.textContent = "No pending drafts.";
-  const audit = await fetch("/api/audit/export");
+  const audit = await fetch(API_BASE + "/api/audit/export");
   if (audit.ok) {
     const data = await audit.json();
     const line = document.createElement("li");
