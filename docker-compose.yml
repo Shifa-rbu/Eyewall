@@ -1,0 +1,11 @@
+services:
+  eyewall:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - eyewall-data:/app/.runtime
+    restart: unless-stopped
+
+volumes:
+  eyewall-data:

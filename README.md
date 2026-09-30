@@ -1,97 +1,80 @@
-# Eyewall — Anticipatory-Action Console for India's Cyclone Coasts
+# Eyewall
 
-Eyewall is a planned anticipatory-action console for India's cyclone-prone coasts. It begins with a reproducible data workflow for the Kendrapara–Paradip delta in Odisha and is intended to support transparent, human-reviewed preparation for cyclone risk.
+![Retrospective Sentinel-1 Fani reference](docs/after.png)
 
-Eyewall is a decision-support prototype, not an official forecast, evacuation directive, hydrodynamic model, verified damage/outage model, insurance product, or autonomous warning system.
+Eyewall is a local prototype for human-reviewed cyclone-coast preparation in the Kendrapara–Paradip delta, Odisha.
 
-## Current status
+## What is real and what is illustrative
 
-The repository currently contains a data-preparation pipeline and its processed outputs. There is no completed or deployed frontend in this repository.
+| Capability | Status |
+|---|---|
+| Elevation, mapped assets, historical cyclone tracks | Processed local SRTM, OpenStreetMap and NOAA IBTrACS files |
+| Flood layer and asset exposure | Sea-connected bathtub screening scenario; not a hydrodynamic model |
+| Browser exposure and server exposure API | Implemented independently; fixture parity is a work in progress |
+| Forecast context | Open-Meteo public forecast feed; unavailable offline and not observations |
+| Gemini drafting | Unavailable; local template drafts only |
+| Earth Engine / Sentinel-1 retrieval | Unavailable; gee_service has no operational integration |
+| Human review and audit | Local SQLite queue; hash-chained audit export; no message dispatch |
 
-### Available now
+This prototype is not an official forecast, evacuation directive, hydrodynamic simulation, or verified damage/outage model. OSM facility completeness and shelter capacity are not verified. Use official IMD/OSDMA guidance and local expertise.
 
-- `prep.py`, a standard-library Python data-preparation script.
-- Processed SRTM elevation data for the configured Kendrapara–Paradip window.
-- Processed OpenStreetMap infrastructure data, including medical points, shelter-capacity proxy points, selected roads, and transmission lines.
-- Processed historical NOAA IBTrACS cyclone-track data; `prep.py` explicitly reads `raw/ibtracs.csv` and prepares the selected named storms.
-- A reproducible data-preparation workflow, provided the documented raw inputs are supplied locally.
+## Quickstart
 
-### Planned MVP
+Python 3.11+ is recommended. On Windows, use the Python launcher (py), since python3 may not be installed and python can resolve to the Microsoft Store stub.
 
-- A screening-level inundation scenario, not a hydrodynamic simulation.
-- Runtime exposure calculations, including road length intersecting scenario inundation and transmission-line length intersecting scenario inundation.
-- Cyclone-track replay.
-- Open-Meteo forecast context, not observations.
-- Gemini advisory drafting.
-- Voice output.
-- CAP-inspired JSON containing a CAP-inspired advisory draft.
-- A human-review queue; no external message is sent.
-- GEE-exported Sentinel-1 evidence.
-- A parametric trigger candidate for review, rather than an automated payout or directive.
+    py -m venv .venv
+    .venv\Scripts\activate
+    py -m pip install -r requirements.txt
+    py -m uvicorn server.main:app --reload --port 8000
 
-## Overview
+Open http://127.0.0.1:8000. The application starts with no API keys; Google features report unavailable and the draft path uses a local template. Create .env from .env.example only when configuring server-side credentials. Keys must never go into browser code.
 
-The present pipeline crops elevation data, extracts selected public-map features, and normalizes historical cyclone tracks. Those inputs are intended to support a screening-level inundation and exposure workflow for human interpretation. In particular, schools, colleges, community facilities, and assembly points are treated as a shelter-capacity proxy; they are not verified shelter capacity or an operational evacuation registry.
+### Static demo
 
-## Local setup
+The original static page is still available without Python dependencies:
 
-The prepared outputs already live under `data/`. To reproduce them, obtain the raw source inputs described in [DATA_SOURCES.md](DATA_SOURCES.md), place them under the ignored `raw/` directory, then run:
+    py -m http.server 8000
 
-```bash
-python3 prep.py
-```
+Open http://127.0.0.1:8000. The static page needs an internet connection for Leaflet map assets and map tiles. Open-Meteo, review, and API functions require FastAPI.
 
-`prep.py` uses only the Python standard library. It expects these local files:
+## Architecture
 
-```text
-raw/elev.hgt.gz
-raw/osm.xml
-raw/ibtracs.csv
-```
+    Browser (vanilla JS) ── local exposure/map ── processed data/
+           │ same-origin API
+           ▼
+    FastAPI ── screening exposure endpoint
+           ├── template advisory + SQLite review/audit
+           └── Google integrations: unavailable in this revision
 
-The script overwrites the processed files in `data/`. Review its configured bounds and storm selection before using it for another area or analysis.
+The browser has no Gemini key field or direct Gemini request. FastAPI serves static/ and the read-only processed data/ directory. The review decision path writes only local SQLite records.
 
-## Repository structure
+### API reference
 
-```text
-prep.py                    Reproducible preprocessing workflow
-data/elev.i16              Processed elevation grid
-data/grid.json             Grid extent and dimensions
-data/assets.json           Processed OSM points and line features
-data/tracks.json           Processed historical IBTrACS tracks
-gee/sentinel1_fani.js      Historical Sentinel-1 Fani evidence script for GEE
-DATA_SOURCES.md            Verified source and attribution notes
-DESCRIPTION.md             Short project description
-```
+- GET /api/health — feature availability; Google services report unavailable.
+- GET /api/exposure?surge=3 — server-side screening calculation for surge in 0–8 m.
+- GET /api/weather — same-origin Open-Meteo forecast proxy; returns an unavailable status offline.
+- POST /api/advisory/draft — template-only SSE draft; limited to 10 requests/minute per IP.
+- GET /api/review/queue, POST /api/review/{draftId}/decision — local human-review queue.
+- GET /api/audit/export — audit entries and hash-chain verification.
+- GET /api/sar/evidence, POST /api/sar/refresh — empty evidence response; refresh returns 409 until GEE is implemented.
 
-## Data limitations
+## Google services
 
-- Elevation is a processed terrain input, not a flood-depth, storm-surge, or inundation forecast.
-- OpenStreetMap is a dated public extract and not a complete infrastructure registry. Feature tags, geometry, names, completeness, and recency may be incomplete or wrong.
-- The shelter-capacity proxy does not establish shelter availability, staffing, condition, accessibility, capacity, or evacuation suitability.
-- Historical NOAA IBTrACS tracks are retrospective records. They are not live track data, forecast context, or official warnings.
-- Any future screening-level inundation scenario and exposure calculation will be illustrative and must be reviewed with local context, authoritative information, and appropriate domain expertise.
-- Any planned AI-generated CAP-inspired advisory draft requires a human-review queue; no external message is sent by Eyewall.
+No Google product integration is active in this revision. Gemini and Earth Engine must not be described as live. Credential setup notes in docs/SETUP_GOOGLE.md explain the intended server-side boundary and the current implementation gap.
 
-## Roadmap
+## Limitations and data sources
 
-1. Implement the planned MVP interface and its transparent screening-level inundation scenario.
-2. Add runtime exposure calculations and cyclone-track replay.
-3. Add clearly labelled Open-Meteo forecast context and GEE-exported Sentinel-1 historical evidence.
-4. Add bounded Gemini advisory drafting, voice output, CAP-inspired JSON, and a human-review queue.
-5. Validate assumptions with domain experts and affected local stakeholders before any operational use.
+The bathtub model floods low cells connected to sea-level seeds using four-neighbour connectivity. It is a screening scenario, not a surge forecast or hydrodynamic simulation. The OSM extract can omit or misclassify facilities, and schools/community facilities are shelter-capacity proxies only. Historical IBTrACS tracks are retrospective records. See DATA_SOURCES.md for sources, licenses, and processing notes.
 
-## Links
+No SAR reference masks or ground-truth flood observations are available in this repository, so validation skill scores have not been computed. See validation/REPORT.md.
 
-- Demo: <UNLISTED_YOUTUBE_URL>
-- Pitch deck: <PITCH_DECK_URL>
-- Project site: <GITHUB_PAGES_URL>
-- Team: <TEAM_MEMBER_NAMES>
+## Development
 
-## Attribution
+    py -m pytest -q
+    py -m ruff check .
 
-Eyewall's present prepared inputs draw on NASA SRTM / USGS elevation data, OpenStreetMap contributors, and NOAA IBTrACS historical cyclone data. See [DATA_SOURCES.md](DATA_SOURCES.md) for use, processing, attribution, licensing notes, and limitations.
+For the current test matrix, see TESTING.md. The standard-library preprocessing workflow remains py prep.py and expects the three local raw inputs documented in DATA_SOURCES.md.
 
 ## License
 
-This repository is released under the [MIT License](LICENSE).
+MIT. See LICENSE.
