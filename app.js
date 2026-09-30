@@ -19,7 +19,7 @@ async function boot() {
   tracks = await (await fetch("data/tracks.json")).json();
 
   map = L.map("map").fitBounds([[meta.south, meta.west], [meta.north, meta.east]]);
-  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+  L.tileLayer("https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
     { attribution: "© OpenStreetMap contributors", maxZoom: 13 } ).addTo(map);
   overlay = L.imageOverlay("", [[meta.north, meta.west], [meta.south, meta.east]],
     { opacity: 0.55, interactive: false }).addTo(map);
