@@ -19,3 +19,6 @@ __pycache__/
 public/
 .firebase/
 firebase-debug.log
+
+# Hugging Face Space payload assembled by deploy/hf-space/push.sh
+.hf-space-build/
