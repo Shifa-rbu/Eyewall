@@ -4,3 +4,14 @@ __pycache__/
 *.pyc
 .env
 .env.*
+!.env.example
+*.json.key
+*.json.keys
+*service-account*.json
+*credentials*.json
+secrets/
+.venv/
+__pycache__/
+.pytest_cache/
+.runtime/
+.test-runtime/
