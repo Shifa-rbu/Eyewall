@@ -263,8 +263,20 @@ def get_queue():
     return review.queue()
 
 
+def _writes_allowed() -> bool:
+    return os.getenv("EYEWALL_ALLOW_WRITES", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+        "enabled",
+    }
+
+
 @app.post("/api/review/{draft_id}/decision")
 def make_decision(draft_id: str, body: DecisionRequest):
+    if not _writes_allowed():
+        raise HTTPException(403, "Public writes are disabled")
     result = review.decide(draft_id, body.decision, body.reviewer, body.edited_text, body.note)
     if result is None:
         raise HTTPException(404, "Draft not found")
@@ -278,6 +290,8 @@ def audit_export():
 
 @app.post("/api/sar/refresh", status_code=202)
 def sar_refresh():
+    if not _writes_allowed():
+        raise HTTPException(403, "Public writes are disabled")
     raise HTTPException(409, "Earth Engine integration is unavailable: service-account credentials and export pipeline are not configured")
 
 
