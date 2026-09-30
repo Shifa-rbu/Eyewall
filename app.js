@@ -53,11 +53,39 @@ async function loadCapabilities() {
   try {
     const response = await fetch("/api/health");
     if (!response.ok) throw new Error("API unavailable");
-    await response.json();
-    chip.textContent = "Screening: ready · Gemini: unavailable · Earth Engine: unavailable · Review: local";
+    const health = await response.json();
+    const gemini = health.gemini || {};
+    // Report what the server actually resolved, not what we assume. The server
+    // treats a key that cannot list models as not configured, so the chip must
+    // not read "ready" from the mere presence of an environment variable.
+    const geminiLabel = gemini.configured
+      ? "Gemini: " + gemini.model + (gemini.remaining_today !== undefined ? " (" + gemini.remaining_today + " calls left today)" : "")
+      : "Gemini: unavailable";
+    const gee = health.gee || {};
+    const geeLabel = gee.configured ? "Earth Engine: ready" : "Earth Engine: unavailable";
+    chip.textContent = "Screening: ready · " + geminiLabel + " · " + geeLabel + " · Review: local";
+    chip.title = gemini.error || "";
   } catch {
     chip.textContent = "Static mode · screening local · Gemini / Earth Engine / review unavailable";
   }
+}
+
+// Turn the SSE "done" frame into a label a reviewer can trust. The point is that
+// the UI never claims a model was used when the server fell back to a template,
+// and never hides a guardrail rejection.
+function describeDraftMode(meta) {
+  const notes = [];
+  if (meta.mode === "gemini") {
+    notes.push("Gemini draft" + (meta.model ? " (" + meta.model + ")" : ""));
+  } else {
+    notes.push("Template draft — no provider call produced usable text");
+  }
+  if (meta.cached) notes.push("served from cache");
+  if (meta.guardrail && meta.guardrail.ok === false) {
+    notes.push("a model draft was rejected by the number guardrail");
+  }
+  if (meta.note) notes.push(meta.note);
+  return notes.join(" · ") + " · queued for human review only.";
 }
 
 // ---------- geometry helpers ----------
@@ -288,7 +316,7 @@ function advisoryText() {
 async function composeAdvisory() {
   if (!lastStats) return;
   $("advisory").value = advisoryText();
-  $("aimode").textContent = "Template mode — Gemini integration unavailable; no provider request was made.";
+  $("aimode").textContent = "Requesting a draft\u2026";
   try {
     const response = await fetch("/api/advisory/draft", {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -299,7 +327,7 @@ async function composeAdvisory() {
     const done = body.match(/event: done\s+data: (.+)/);
     if (done) {
       const meta = JSON.parse(done[1]);
-      $("aimode").textContent = "Template draft queued for human review only.";
+      $("aimode").textContent = describeDraftMode(meta);
       await loadReviewQueue();
     }
   } catch (error) {

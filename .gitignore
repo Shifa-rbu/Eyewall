@@ -15,3 +15,7 @@ __pycache__/
 .pytest_cache/
 .runtime/
 .test-runtime/
+# Firebase Hosting build output (assembled by deploy/firebase/build_site.sh)
+public/
+.firebase/
+firebase-debug.log

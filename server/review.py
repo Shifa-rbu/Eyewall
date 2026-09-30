@@ -3,7 +3,7 @@ import hashlib
 import json
 import sqlite3
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from .config import DB_PATH
@@ -46,7 +46,7 @@ def add_audit(db, payload):
     prev = row["hash"] if row else ZERO_HASH
     body = canonical(payload)
     digest = hashlib.sha256((prev + body).encode()).hexdigest()
-    ts = datetime.now(timezone.utc).isoformat()
+    ts = datetime.now(UTC).isoformat()
     db.execute("INSERT INTO audit(ts,prev_hash,hash,payload_json) VALUES(?,?,?,?)", (ts, prev, digest, body))
     return db.execute("SELECT last_insert_rowid()").fetchone()[0], digest
 
@@ -54,7 +54,7 @@ def add_audit(db, payload):
 def create_draft(surge, lang, exposure, text, mode="template", model=None):
     draft_id = str(uuid4())
     with database() as db:
-        db.execute("INSERT INTO draft VALUES(?,?,?,?,?,?,?,?)", (draft_id, datetime.now(timezone.utc).isoformat(), surge, lang, mode, model, canonical(exposure), text))
+        db.execute("INSERT INTO draft VALUES(?,?,?,?,?,?,?,?)", (draft_id, datetime.now(UTC).isoformat(), surge, lang, mode, model, canonical(exposure), text))
         add_audit(db, {"type": "draft", "draftId": draft_id, "mode": mode})
     return draft_id
 
@@ -63,7 +63,7 @@ def decide(draft_id, decision, reviewer, edited_text=None, note=None):
     with database() as db:
         if not db.execute("SELECT 1 FROM draft WHERE id=?", (draft_id,)).fetchone():
             return None
-        ts = datetime.now(timezone.utc).isoformat()
+        ts = datetime.now(UTC).isoformat()
         db.execute("INSERT INTO decision(draft_id,decided_at,decision,reviewer,edited_text,note) VALUES(?,?,?,?,?,?)", (draft_id, ts, decision, reviewer, edited_text, note))
         seq, digest = add_audit(db, {"type":"decision", "draftId":draft_id, "decision":decision, "reviewer":reviewer, "editedText":edited_text, "note":note})
         return {"status":"recorded", "auditSeq":seq, "hash":digest}
@@ -75,7 +75,8 @@ def queue():
         decided = db.execute("SELECT d.*, x.decision, x.reviewer, x.decided_at FROM draft d JOIN decision x ON x.draft_id=d.id ORDER BY x.id DESC").fetchall()
         def item(row):
             out = dict(row)
-            if "exposure_json" in out: out["exposure"] = json.loads(out.pop("exposure_json"))
+            if "exposure_json" in out:
+                out["exposure"] = json.loads(out.pop("exposure_json"))
             return out
         return {"pending":[item(r) for r in pending], "decided":[item(r) for r in decided]}
 

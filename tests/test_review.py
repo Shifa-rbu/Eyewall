@@ -1,6 +1,6 @@
 import socket
-from uuid import uuid4
 from pathlib import Path
+from uuid import uuid4
 
 from server import review
 

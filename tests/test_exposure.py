@@ -1,6 +1,6 @@
 import pytest
 
-from server.exposure import compute_exposure, cell_at, haversine_km, meta
+from server.exposure import cell_at, compute_exposure, haversine_km, meta
 
 
 @pytest.mark.parametrize(("surge", "area", "medical", "shelter", "power", "road", "grid", "flags"), [

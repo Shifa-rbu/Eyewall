@@ -1,6 +1,10 @@
 # prep.py — run once:  python3 prep.py
 # Standard library only — nothing to install.
-import gzip, array, math, json, csv
+import array
+import csv
+import gzip
+import json
+import math
 import xml.etree.ElementTree as ET
 
 # ---- your choices (config, not results — the only things you "hardcode") ----
@@ -10,9 +14,12 @@ STEP = 2                                    # keep every 2nd pixel (~60 m); use 
 STORMS = {"FANI", "AMPHAN", "YAAS", "REMAL", "PHAILIN", "HUDHUD", "MOCHA", "BIPARJOY"}
 
 # ---- 1) elevation: crop the real SRTM tile to your window ----
-raw = gzip.open("raw/elev.hgt.gz").read()
+with gzip.open("raw/elev.hgt.gz") as _fh:
+    raw = _fh.read()
 n = math.isqrt(len(raw) // 2)               # 3601 -> ~30 m resolution
-a = array.array("h"); a.frombytes(raw); a.byteswap()   # .hgt files are big-endian
+a = array.array("h")
+a.frombytes(raw)                            # .hgt files are big-endian
+a.byteswap()
 
 r0, r1 = int((TILE_LAT - N) * (n - 1)), int((TILE_LAT - S) * (n - 1))
 c0, c1 = int((W - TILE_LON) * (n - 1)), int((E - TILE_LON) * (n - 1))
@@ -23,9 +30,11 @@ for r in range(r0, r1 + 1, STEP):
         v = a[base + c]
         grid.append(0 if v < -100 else v)   # -9999 means "no data" -> treat as sea
 rows, cols = (r1 - r0) // STEP + 1, (c1 - c0) // STEP + 1
-grid.tofile(open("data/elev.i16", "wb"))    # little-endian on normal laptops
-json.dump({"south": S, "north": N, "west": W, "east": E,
-           "rows": rows, "cols": cols}, open("data/grid.json", "w"))
+with open("data/elev.i16", "wb") as _fh:     # little-endian on normal laptops
+    grid.tofile(_fh)
+with open("data/grid.json", "w") as _fh:
+    json.dump({"south": S, "north": N, "west": W, "east": E,
+               "rows": rows, "cols": cols}, _fh)
 print("grid:", rows, "x", cols)
 
 # ---- 2) infrastructure from the real OSM xml ----
@@ -34,17 +43,19 @@ print("grid:", rows, "x", cols)
 # power = grid nodes (substations are often mapped as areas -> we take their centre);
 # grid = transmission lines (power=line), drawn as their own layer.
 pts, roads, gridlines, nodes = [], [], [], {}
-for ev, el in ET.iterparse("raw/osm.xml", events=("end",)):
+for _ev, el in ET.iterparse("raw/osm.xml", events=("end",)):
     if el.tag == "node":
         nodes[el.get("id")] = (el.get("lat"), el.get("lon"))
         t = {x.get("k"): x.get("v") for x in el.findall("tag")}
         kind = None
-        if t.get("amenity") in ("hospital", "clinic", "doctors"): kind = "hospital"
-        elif t.get("emergency") == "ambulance_station":           kind = "hospital"
-        elif t.get("amenity") in ("school", "college"):           kind = "shelter"
-        elif t.get("amenity") in ("shelter", "community_centre"): kind = "shelter"
-        elif t.get("emergency") == "assembly_point":              kind = "shelter"
-        elif t.get("power") in ("substation", "plant", "terminal"): kind = "power"
+        if t.get("amenity") in ("hospital", "clinic", "doctors") or t.get("emergency") == "ambulance_station":
+            kind = "hospital"
+        elif (t.get("amenity") in ("school", "college")
+              or t.get("amenity") in ("shelter", "community_centre")
+              or t.get("emergency") == "assembly_point"):
+            kind = "shelter"
+        elif t.get("power") in ("substation", "plant", "terminal"):
+            kind = "power"
         if kind:
             pts.append({"kind": kind, "name": t.get("name", "unnamed"),
                         "lat": float(el.get("lat")), "lon": float(el.get("lon"))})
@@ -70,12 +81,15 @@ for ev, el in ET.iterparse("raw/osm.xml", events=("end",)):
         el.clear()
     elif el.tag == "relation":
         el.clear()
-json.dump({"points": pts, "roads": roads, "grid": gridlines}, open("data/assets.json", "w"))
+with open("data/assets.json", "w") as _fh:
+    json.dump({"points": pts, "roads": roads, "grid": gridlines}, _fh)
 print("assets:", len(pts), "points,", len(roads), "roads,", len(gridlines), "transmission lines")
 
 # ---- 3) real cyclone tracks (NOAA IBTrACS; the file has TWO header rows) ----
 storms = {}
-for r in csv.DictReader(open("raw/ibtracs.csv", encoding="utf-8")):
+with open("raw/ibtracs.csv", encoding="utf-8") as _fh:
+    rows_in = list(csv.DictReader(_fh))
+for r in rows_in:
     name = (r.get("NAME") or "").strip()
     if name not in STORMS:
         continue
@@ -90,5 +104,6 @@ for r in csv.DictReader(open("raw/ibtracs.csv", encoding="utf-8")):
     storms.setdefault(name, []).append(
         {"t": r["ISO_TIME"], "lat": lat, "lon": lon, "kt": kt})
 out = [{"name": k, "pts": v} for k, v in storms.items()]
-json.dump(out, open("data/tracks.json", "w"))
+with open("data/tracks.json", "w") as _fh:
+    json.dump(out, _fh)
 print("storms:", sorted(storms))

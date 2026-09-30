@@ -1,8 +1,9 @@
 """Canonical screening-level sea-connected bathtub exposure calculation."""
-from array import array
-from datetime import datetime, timezone
 import json
 import math
+from array import array
+from datetime import UTC, datetime
+from itertools import pairwise
 
 from .config import DATA
 
@@ -27,7 +28,18 @@ def haversine_km(a, b):
     return 2*6371*math.asin(math.sqrt(h))
 
 
-def compute_exposure(surge):
+def flood_mask(surge):
+    """Sea-connected bathtub mask: 1 where the scenario has water.
+
+    Seeded from every cell at or below sea level, then grown outward only into
+    4-connected neighbours below the scenario height. Seeding from the sea is
+    what stops the model inventing inland lakes with no path to the coast, which
+    a naive `elev < surge` test produces.
+
+    Exposed separately because the accessibility engine needs the same mask the
+    exposure numbers come from; recomputing it independently would let the two
+    drift apart.
+    """
     rows, cols = meta["rows"], meta["cols"]
     mask = bytearray(rows*cols)
     stack = []
@@ -44,7 +56,19 @@ def compute_exposure(surge):
             if not mask[j] and elev[j] < surge:
                 mask[j] = 1
                 stack.append(j)
-    cell_area = (111320*(meta["north"]-meta["south"])/rows) * (111320*math.cos(math.radians((meta["north"]+meta["south"])/2))*(meta["east"]-meta["west"])/cols) / 1e6
+    return mask
+
+
+def cell_area_km2():
+    rows, cols = meta["rows"], meta["cols"]
+    return (111320*(meta["north"]-meta["south"])/rows) * (
+        111320*math.cos(math.radians((meta["north"]+meta["south"])/2))*(meta["east"]-meta["west"])/cols
+    ) / 1e6
+
+
+def compute_exposure(surge):
+    mask = flood_mask(surge)
+    cell_area = cell_area_km2()
     area = sum(1 for i, wet in enumerate(mask) if wet and elev[i] > 0) * cell_area
     inundated = []
     counts = {"hospital": 0, "shelter": 0, "power": 0}
@@ -53,8 +77,13 @@ def compute_exposure(surge):
         if i >= 0 and mask[i]:
             counts[p["kind"]] += 1
             inundated.append({"name": p["name"], "kind": p["kind"]})
-    wet_power = [(p["lat"], p["lon"]) for p in assets["points"] if p["kind"] == "power"
-                 and (lambda idx: idx >= 0 and mask[idx])(cell_at(p["lat"], p["lon"]))]
+    wet_power = []
+    for p in assets["points"]:
+        if p["kind"] != "power":
+            continue
+        idx = cell_at(p["lat"], p["lon"])
+        if idx >= 0 and mask[idx]:
+            wet_power.append((p["lat"], p["lon"]))
     wet_buckets = {}
     for line in assets["grid"]:
         for v in line["path"]:
@@ -79,7 +108,7 @@ def compute_exposure(surge):
         total = 0.0
         for line in lines:
             path = line["path"]
-            for a, b in zip(path, path[1:]):
+            for a, b in pairwise(path):
                 i, j = cell_at(*a), cell_at(*b)
                 if i >= 0 and j >= 0 and mask[i] and mask[j]:
                     total += haversine_km(a,b)
@@ -89,4 +118,4 @@ def compute_exposure(surge):
             "roadKm": round(line_km(assets["roads"]), 2), "gridKm": round(line_km(assets["grid"]), 2),
             "flagged": flagged, "inundated": inundated,
             "model": "sea-connected bathtub screening (not hydrodynamic)",
-            "computedAt": datetime.now(timezone.utc).isoformat()}
+            "computedAt": datetime.now(UTC).isoformat()}
