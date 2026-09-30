@@ -1,11 +1,13 @@
 """Same-origin API for the keyless Eyewall screening demo."""
 import json
+import os
 import time
 from collections import defaultdict, deque
 from pathlib import Path
 
 import httpx
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -18,13 +20,50 @@ from .exposure import compute_exposure
 from .waterlevel import WaterLevelInput, compose, from_landfall_timing
 
 app = FastAPI(title="Eyewall", version="0.2.0")
-# Same-origin only. No permissive CORS middleware is installed.
+# Same-origin only unless EYEWALL_ALLOWED_ORIGINS is configured.
 _rate = defaultdict(deque)
+
+_cors_cache = {}
+
+
+class OptInCORSMiddleware:
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        raw_origins = os.getenv("EYEWALL_ALLOWED_ORIGINS", "").strip()
+        if not raw_origins:
+            await self.app(scope, receive, send)
+            return
+
+        if raw_origins not in _cors_cache:
+            origins = [o.strip() for o in raw_origins.split(",") if o.strip()]
+            _cors_cache[raw_origins] = CORSMiddleware(
+                self.app,
+                allow_origins=origins,
+                allow_credentials=True,
+                allow_methods=["*"],
+                allow_headers=["*"],
+            )
+        await _cors_cache[raw_origins](scope, receive, send)
+
+
+app.add_middleware(OptInCORSMiddleware)
 
 
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
     response = await call_next(request)
+    raw_origins = os.getenv("EYEWALL_ALLOWED_ORIGINS", "").strip()
+    allowed_origins = [o.strip() for o in raw_origins.split(",") if o.strip()]
+    connect_src = "connect-src 'self'"
+    if allowed_origins:
+        connect_src += " " + " ".join(allowed_origins)
+
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
         # app.js loads tiles from the bare host tile.openstreetmap.org; a
@@ -33,7 +72,7 @@ async def security_headers(request: Request, call_next):
         # future switch to a numbered/regional tile host keeps working.
         "img-src 'self' data: https://tile.openstreetmap.org https://*.tile.openstreetmap.org; "
         "style-src 'self' 'unsafe-inline' https://unpkg.com; "
-        "script-src 'self' https://unpkg.com; connect-src 'self'; "
+        f"script-src 'self' https://unpkg.com; {connect_src}; "
         "form-action 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
     )
     response.headers["X-Content-Type-Options"] = "nosniff"
